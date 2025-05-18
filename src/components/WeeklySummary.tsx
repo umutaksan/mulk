@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, TrendingUp, TrendingDown, Users, ArrowRight, ArrowLeft, Clock, Home, PiggyBank, AlertTriangle, CheckCircle2, CalendarClock, LogIn, LogOut, User, Phone, Mail, MapPin, PenTool as Tool } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, Users, ArrowRight, ArrowLeft, Clock, Home, PiggyBank, AlertTriangle, CheckCircle2, CalendarClock, LogIn, LogOut, User, Phone, Mail, MapPin, PenTool as Tool, ExternalLink } from 'lucide-react';
 import { Booking } from '../types/Booking';
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval, startOfMonth, endOfMonth, differenceInHours, addHours } from 'date-fns';
 
@@ -101,7 +101,8 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
         details: upcomingArrivals.map(booking => ({
           type: 'arrival',
           booking,
-          hoursUntil: differenceInHours(parseISO(booking.dateArrival), today)
+          hoursUntil: differenceInHours(parseISO(booking.dateArrival), today),
+          needsChekin: true
         }))
       });
     }
@@ -371,30 +372,39 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
                                 )}
                               </div>
                             </div>
-                            {(booking.phone || booking.email) && (
-                              <div className="mt-2 pt-2 border-t border-gray-200">
-                                <div className="flex gap-4">
-                                  {booking.phone && (
-                                    <a 
-                                      href={`tel:${booking.phone}`}
-                                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-                                    >
-                                      <Phone className="h-4 w-4" />
-                                      <span>Call</span>
-                                    </a>
-                                  )}
-                                  {booking.email && (
-                                    <a 
-                                      href={`mailto:${booking.email}`}
-                                      className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
-                                    >
-                                      <Mail className="h-4 w-4" />
-                                      <span>Email</span>
-                                    </a>
-                                  )}
-                                </div>
+                            <div className="mt-2 pt-2 border-t border-gray-200">
+                              <div className="flex gap-4">
+                                {booking.phone && (
+                                  <a 
+                                    href={`tel:${booking.phone}`}
+                                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                                  >
+                                    <Phone className="h-4 w-4" />
+                                    <span>Call</span>
+                                  </a>
+                                )}
+                                {booking.email && (
+                                  <a 
+                                    href={`mailto:${booking.email}`}
+                                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                                  >
+                                    <Mail className="h-4 w-4" />
+                                    <span>Email</span>
+                                  </a>
+                                )}
+                                {detail.needsChekin && (
+                                  <a 
+                                    href="https://dashboard.chekin.com"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-sm text-orange-600 hover:text-orange-800 ml-auto"
+                                  >
+                                    <ExternalLink className="h-4 w-4" />
+                                    <span>Submit to Police (Chekin)</span>
+                                  </a>
+                                )}
                               </div>
-                            )}
+                            </div>
                           </div>
                         );
                       }
