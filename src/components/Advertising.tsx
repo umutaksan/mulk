@@ -1,5 +1,5 @@
 import React from 'react';
-import { Megaphone, Globe, Target, TrendingUp, Share2 } from 'lucide-react';
+import { Megaphone, Globe, Target, TrendingUp, Share2, Instagram, Linkedin } from 'lucide-react';
 
 const Advertising: React.FC = () => {
   return (
@@ -45,24 +45,35 @@ const Advertising: React.FC = () => {
           <div className="space-y-3">
             <div className="p-3 bg-gray-50 rounded-lg">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-medium">Summer Campaign</span>
+                <span className="font-medium">Instagram Promotion</span>
                 <span className="text-green-600">Active</span>
               </div>
               <div className="text-sm text-gray-600">
-                <div>Budget: €500</div>
-                <div>Platform: Meta Ads</div>
-                <div>Duration: 30 days</div>
+                <div>Budget: €200/month</div>
+                <div>Platform: Instagram Ads</div>
+                <div>Target: Spain, UK</div>
               </div>
             </div>
             <div className="p-3 bg-gray-50 rounded-lg">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-medium">Winter Promotion</span>
-                <span className="text-gray-600">Scheduled</span>
+                <span className="font-medium">Google Search</span>
+                <span className="text-green-600">Active</span>
               </div>
               <div className="text-sm text-gray-600">
-                <div>Budget: €300</div>
+                <div>Budget: €300/month</div>
                 <div>Platform: Google Ads</div>
-                <div>Duration: 15 days</div>
+                <div>Keywords: Marbella rentals</div>
+              </div>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">Meta Retargeting</span>
+                <span className="text-green-600">Active</span>
+              </div>
+              <div className="text-sm text-gray-600">
+                <div>Budget: €150/month</div>
+                <div>Platform: Meta Ads</div>
+                <div>Audience: Website visitors</div>
               </div>
             </div>
           </div>
@@ -75,22 +86,20 @@ const Advertising: React.FC = () => {
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span>Instagram</span>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                Manage
+              <div className="flex items-center gap-2">
+                <Instagram className="h-4 w-4" />
+                <span>Instagram</span>
+              </div>
+              <a href="https://www.instagram.com/ldguestmarbella" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                @ldguestmarbella
               </a>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span>Facebook</span>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                Manage
-              </a>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span>LinkedIn</span>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
-                Manage
-              </a>
+              <div className="flex items-center gap-2">
+                <Linkedin className="h-4 w-4" />
+                <span>LinkedIn</span>
+              </div>
+              <span className="text-gray-500">Coming Soon</span>
             </div>
           </div>
         </div>
@@ -99,23 +108,23 @@ const Advertising: React.FC = () => {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="h-5 w-5 text-blue-600" />
-          <h3 className="font-medium">Performance Metrics</h3>
+          <h3 className="font-medium">Monthly Marketing Budget</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-green-50 rounded-lg">
-            <div className="text-sm text-green-600 mb-1">Click-through Rate</div>
-            <div className="text-2xl font-bold text-green-700">2.8%</div>
-            <div className="text-sm text-green-600">+0.5% from last month</div>
+            <div className="text-sm text-green-600 mb-1">Instagram Ads</div>
+            <div className="text-2xl font-bold text-green-700">€200</div>
+            <div className="text-sm text-green-600">Monthly budget</div>
           </div>
           <div className="p-4 bg-blue-50 rounded-lg">
-            <div className="text-sm text-blue-600 mb-1">Conversion Rate</div>
-            <div className="text-2xl font-bold text-blue-700">1.5%</div>
-            <div className="text-sm text-blue-600">+0.2% from last month</div>
+            <div className="text-sm text-blue-600 mb-1">Google Ads</div>
+            <div className="text-2xl font-bold text-blue-700">€300</div>
+            <div className="text-sm text-blue-600">Monthly budget</div>
           </div>
           <div className="p-4 bg-purple-50 rounded-lg">
-            <div className="text-sm text-purple-600 mb-1">ROI</div>
-            <div className="text-2xl font-bold text-purple-700">245%</div>
-            <div className="text-sm text-purple-600">+15% from last month</div>
+            <div className="text-sm text-purple-600 mb-1">Meta Retargeting</div>
+            <div className="text-2xl font-bold text-purple-700">€150</div>
+            <div className="text-sm text-purple-600">Monthly budget</div>
           </div>
         </div>
       </div>
