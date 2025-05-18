@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, Check } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx/xlsx.mjs';
 
 interface FileUploaderProps {
   onFileLoaded: (csvData: string, guestDetails?: any[]) => void;
