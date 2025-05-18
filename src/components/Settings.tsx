@@ -24,6 +24,7 @@ const Settings: React.FC<SettingsProps> = ({ onFileLoaded }) => {
     { name: 'ALOHA • Garden + Rooftop View Marbella Stay', type: 'L&D Guest Commission' }
   ]);
   const [csvData, setCsvData] = useState<string>('');
+  const [guestDetails, setGuestDetails] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
@@ -74,8 +75,11 @@ const Settings: React.FC<SettingsProps> = ({ onFileLoaded }) => {
     }
   };
 
-  const handleFileLoaded = (data: string) => {
+  const handleFileLoaded = (data: string, details?: any[]) => {
     setCsvData(data);
+    if (details) {
+      setGuestDetails(details);
+    }
     onFileLoaded(data);
   };
 
@@ -87,16 +91,16 @@ const Settings: React.FC<SettingsProps> = ({ onFileLoaded }) => {
     setUploadStatus(null);
 
     try {
-      const formData = new FormData();
-      formData.append('csv', new Blob([csvData], { type: 'text/csv' }));
-
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/lodgify`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ csvData })
+        body: JSON.stringify({ 
+          csvData,
+          guestDetails 
+        })
       });
 
       if (!response.ok) {
@@ -122,6 +126,7 @@ const Settings: React.FC<SettingsProps> = ({ onFileLoaded }) => {
       }
 
       setCsvData('');
+      setGuestDetails([]);
     } catch (error: any) {
       console.error('Error uploading to database:', error);
       setUploadError(`Failed to upload data: ${error.message}`);

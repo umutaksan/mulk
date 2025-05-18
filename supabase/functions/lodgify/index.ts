@@ -16,7 +16,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-async function importCSVData(csvContent: string) {
+async function importCSVData(csvContent: string, guestDetails: any[] = []) {
   try {
     const records = parse(csvContent, {
       columns: true,
@@ -29,6 +29,20 @@ async function importCSVData(csvContent: string) {
         error: 'No valid records found in CSV file'
       };
     }
+
+    // Create a map of guest details for quick lookup
+    const guestDetailsMap = new Map(
+      guestDetails.map(guest => [
+        `${guest.Name}-${guest.DateArrival}`,
+        {
+          birthplace: guest.Birthplace,
+          nationality: guest.Nationality,
+          passport: guest.Passport,
+          address: guest.Address,
+          accompanying_guests: guest.AccompanyingGuests ? JSON.parse(guest.AccompanyingGuests) : null
+        }
+      ])
+    );
 
     let insertedCount = 0;
     let skippedCount = 0;
@@ -59,6 +73,10 @@ async function importCSVData(csvContent: string) {
           .single();
 
         if (!existingBooking) {
+          // Get additional guest details if available
+          const guestKey = `${record.Name}-${record.DateArrival}`;
+          const additionalDetails = guestDetailsMap.get(guestKey) || {};
+
           const bookingData = {
             property_id: property.id,
             guest_name: record.Name,
@@ -71,7 +89,13 @@ async function importCSVData(csvContent: string) {
             guests: parseInt(record.People) || 1,
             total_amount: parseFloat(record.TotalAmount.replace(',', '.')),
             source: record.Source || 'CSV Import',
-            status: record.Status?.toLowerCase() || 'confirmed'
+            status: record.Status?.toLowerCase() || 'confirmed',
+            // Add additional guest details
+            guest_birthplace: additionalDetails.birthplace || null,
+            guest_nationality: additionalDetails.nationality || null,
+            guest_passport: additionalDetails.passport || null,
+            guest_address: additionalDetails.address || null,
+            accompanying_guests: additionalDetails.accompanying_guests || null
           };
 
           const { data: insertedBooking, error: bookingError } = await supabase
@@ -209,13 +233,13 @@ Deno.serve(async (req) => {
       throw new Error('Method not allowed');
     }
 
-    const { csvData } = await req.json();
+    const { csvData, guestDetails } = await req.json();
     
     if (!csvData) {
       throw new Error('No CSV data provided');
     }
 
-    const result = await importCSVData(csvData);
+    const result = await importCSVData(csvData, guestDetails);
     
     return new Response(
       JSON.stringify(result),
