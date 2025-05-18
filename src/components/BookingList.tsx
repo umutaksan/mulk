@@ -25,6 +25,7 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
   const [rating, setRating] = useState<number>(0);
   const [reviewText, setReviewText] = useState<string>('');
   const [editingRating, setEditingRating] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const properties = ['All', ...new Set(bookings.map(b => b.houseName))];
 
@@ -118,9 +119,20 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
     }));
   };
 
+  const isValidUUID = (uuid: string) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  };
+
   const handleAddRating = async (bookingId: string, source: string) => {
     try {
-      const { error } = await supabase
+      setError(null);
+
+      if (!isValidUUID(bookingId)) {
+        throw new Error('Invalid booking ID format');
+      }
+
+      const { error: supabaseError } = await supabase
         .from('bookings')
         .update({
           [source === 'Booking.com' ? 'booking_rating' : 'airbnb_rating']: rating,
@@ -129,14 +141,28 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
         })
         .eq('id', bookingId);
 
-      if (error) throw error;
+      if (supabaseError) throw supabaseError;
+
+      // Update local state to reflect the changes
+      setBookingsState(prevBookings =>
+        prevBookings.map(booking =>
+          booking.id === bookingId
+            ? {
+                ...booking,
+                [source === 'Booking.com' ? 'booking_rating' : 'airbnb_rating']: rating,
+                review_text: reviewText,
+                review_date: new Date().toISOString()
+              }
+            : booking
+        )
+      );
 
       setEditingRating(null);
       setRating(0);
       setReviewText('');
     } catch (error) {
       console.error('Error adding rating:', error);
-      alert('Failed to add rating');
+      setError(error instanceof Error ? error.message : 'Failed to add rating');
     }
   };
 
@@ -156,6 +182,13 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
 
   return (
     <div className="space-y-8">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5" />
+          {error}
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Home className="h-5 w-5 text-blue-600" />
