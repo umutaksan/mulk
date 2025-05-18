@@ -2,67 +2,15 @@ import React from 'react';
 import { Calendar, TrendingUp, TrendingDown, Users, ArrowRight, ArrowLeft, Clock, Home, PiggyBank, AlertTriangle, CheckCircle2, CalendarClock, LogIn, LogOut, User, Phone, Mail, MapPin, PenTool as Tool } from 'lucide-react';
 import { Booking } from '../types/Booking';
 import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval, startOfMonth, endOfMonth, differenceInHours, addHours } from 'date-fns';
-import { supabase } from '../lib/supabase';
-import { useEffect, useState } from 'react';
 
 interface WeeklySummaryProps {
   bookings: Booking[];
   bookingsByProperty: { [property: string]: Booking[] };
 }
 
-interface MaintenanceTask {
-  id: string;
-  property: string;
-  title: string;
-  description: string;
-  due_date: string;
-  priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'in-progress' | 'completed';
-  price: number;
-}
-
 const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByProperty }) => {
-  const [maintenanceTasks, setMaintenanceTasks] = useState<MaintenanceTask[]>([]);
   const today = new Date();
   
-  useEffect(() => {
-    fetchMaintenanceTasks();
-  }, []);
-
-  const fetchMaintenanceTasks = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('maintenance_tasks')
-        .select(`
-          id,
-          title,
-          description,
-          due_date,
-          priority,
-          status,
-          price,
-          properties(name)
-        `);
-
-      if (error) throw error;
-
-      const formattedTasks = data.map(task => ({
-        id: task.id,
-        property: task.properties.name,
-        title: task.title,
-        description: task.description,
-        due_date: task.due_date,
-        priority: task.priority,
-        status: task.status,
-        price: task.price
-      }));
-
-      setMaintenanceTasks(formattedTasks);
-    } catch (error) {
-      console.error('Error fetching maintenance tasks:', error);
-    }
-  };
-
   // Calculate week ranges
   const thisWeekStart = startOfWeek(today);
   const thisWeekEnd = endOfWeek(today);
@@ -178,20 +126,36 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
       });
     }
 
-    // Add maintenance tasks that are due soon or overdue
-    const urgentMaintenanceTasks = maintenanceTasks.filter(task => {
-      const dueDate = new Date(task.due_date);
-      const daysUntilDue = differenceInHours(dueDate, today) / 24;
-      return (daysUntilDue <= 7 && task.status !== 'completed') || // Due within a week
-             (daysUntilDue < 0 && task.status !== 'completed'); // Overdue
-    });
+    // Add maintenance tasks
+    const maintenanceTasks = [
+      {
+        id: '1',
+        property: 'Marbella Old Town',
+        title: 'AC Maintenance',
+        description: 'Regular maintenance check for all AC units',
+        dueDate: '2025-03-15',
+        priority: 'medium',
+        status: 'pending',
+        price: 150
+      },
+      {
+        id: '2',
+        property: 'Jardines Tropicales-Puerto Banús',
+        title: 'Pool Cleaning',
+        description: 'Weekly pool maintenance and chemical balance check',
+        dueDate: '2025-03-10',
+        priority: 'high',
+        status: 'in-progress',
+        price: 80
+      }
+    ];
 
-    if (urgentMaintenanceTasks.length > 0) {
+    if (maintenanceTasks.length > 0) {
       tasks.push({
         type: 'maintenance',
-        message: `${urgentMaintenanceTasks.length} maintenance tasks need attention`,
+        message: `${maintenanceTasks.length} maintenance tasks scheduled`,
         icon: Tool,
-        details: urgentMaintenanceTasks.map(task => ({
+        details: maintenanceTasks.map(task => ({
           type: 'maintenance',
           task
         }))
@@ -449,7 +413,7 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
                             <div className="text-sm text-purple-700">
                               <div className="flex items-center gap-1 mb-1">
                                 <Calendar className="h-4 w-4" />
-                                <span>Due: {format(new Date(task.due_date), 'MMM d')}</span>
+                                <span>Due: {format(new Date(task.dueDate), 'MMM d')}</span>
                               </div>
                               <div className="flex items-center gap-1">
                                 <Home className="h-4 w-4" />
@@ -475,5 +439,3 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
 };
 
 export default WeeklySummary;
-
-export default WeeklySummary
