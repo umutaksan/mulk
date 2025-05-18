@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar, TrendingUp, TrendingDown, Users, ArrowRight, ArrowLeft, Clock, Home, PiggyBank, AlertTriangle, CheckCircle2, CalendarClock, LogIn, LogOut, User, Phone, Mail, MapPin, PenTool as Tool, ExternalLink } from 'lucide-react';
 import { Booking } from '../types/Booking';
-import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval, startOfMonth, endOfMonth, differenceInHours, addHours, eachDayOfInterval, isSameMonth, isWithinRange, addMonths } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval, startOfMonth, endOfMonth, differenceInHours, addHours, eachDayOfInterval, addMonths, isSameMonth, isToday, isSameDay } from 'date-fns';
 
 interface WeeklySummaryProps {
   bookings: Booking[];
@@ -445,7 +445,7 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
         </div>
       )}
 
-      {/* Property Availability Calendar section */}
+      {/* New Property Availability Calendar Section */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
@@ -459,73 +459,81 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
             className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
           >
             <ExternalLink className="h-4 w-4" />
-            Check Pricing on PriceLabs
+            <span>Check Pricing on PriceLabs</span>
           </a>
         </div>
 
-        {Object.entries(bookingsByProperty).map(([property, propertyBookings]) => {
-          // Get next 3 months
-          const months = Array.from({ length: 3 }, (_, i) => addMonths(new Date(), i));
-          
-          // Get all booked dates for this property
-          const bookedDates = propertyBookings.reduce((dates, booking) => {
-            const start = parseISO(booking.dateArrival);
-            const end = parseISO(booking.dateDeparture);
-            const daysInRange = eachDayOfInterval({ start, end });
-            return [...dates, ...daysInRange];
-          }, [] as Date[]);
+        <div className="space-y-8">
+          {Object.entries(bookingsByProperty).map(([property, propertyBookings]) => {
+            const today = new Date();
+            const months = [
+              today,
+              addMonths(today, 1),
+              addMonths(today, 2)
+            ];
 
-          return (
-            <div key={property} className="mb-8 last:mb-0">
-              <h4 className="font-medium mb-4 flex items-center gap-2">
-                <Home className="h-4 w-4 text-gray-500" />
-                {property}
-              </h4>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {months.map(month => {
-                  const daysInMonth = eachDayOfInterval({
-                    start: startOfMonth(month),
-                    end: endOfMonth(month)
-                  });
+            // Get all booked dates for this property
+            const bookedDates = propertyBookings.reduce((dates, booking) => {
+              const start = parseISO(booking.dateArrival);
+              const end = parseISO(booking.dateDeparture);
+              const daysInBooking = eachDayOfInterval({ start, end });
+              return [...dates, ...daysInBooking];
+            }, [] as Date[]);
 
-                  return (
-                    <div key={format(month, 'yyyy-MM')} className="bg-gray-50 rounded-lg p-4">
-                      <div className="text-sm font-medium mb-3 text-center">
-                        {format(month, 'MMMM yyyy')}
-                      </div>
-                      <div className="grid grid-cols-7 gap-1">
-                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                          <div key={day} className="text-xs text-center text-gray-500 py-1">
-                            {day}
-                          </div>
-                        ))}
-                        {daysInMonth.map(date => {
-                          const isBooked = bookedDates.some(bookedDate => 
-                            format(bookedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-                          );
+            return (
+              <div key={property} className="space-y-4">
+                <h4 className="font-medium text-gray-800">{property}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {months.map((month) => {
+                    const start = startOfMonth(month);
+                    const end = endOfMonth(month);
+                    const days = eachDayOfInterval({ start, end });
 
-                          return (
-                            <div 
-                              key={format(date, 'yyyy-MM-dd')}
-                              className={`text-xs text-center py-1 rounded ${
-                                isBooked 
-                                  ? 'bg-red-100 text-red-700' 
-                                  : 'bg-green-100 text-green-700'
-                              }`}
-                            >
-                              {format(date, 'd')}
+                    return (
+                      <div key={month.toISOString()} className="bg-gray-50 rounded-lg p-4">
+                        <div className="text-center mb-4 font-medium">
+                          {format(month, 'MMMM yyyy')}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 text-center text-sm mb-2">
+                          {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                            <div key={day} className="text-gray-500">
+                              {day}
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {Array.from({ length: start.getDay() }).map((_, i) => (
+                            <div key={`empty-${i}`} className="h-8" />
+                          ))}
+                          {days.map(day => {
+                            const isBooked = bookedDates.some(bookedDate => 
+                              isSameDay(bookedDate, day)
+                            );
+                            
+                            return (
+                              <div
+                                key={day.toISOString()}
+                                className={`
+                                  h-8 flex items-center justify-center rounded-full text-sm
+                                  ${isToday(day) ? 'border-2 border-blue-500' : ''}
+                                  ${isBooked 
+                                    ? 'bg-red-100 text-red-800' 
+                                    : 'bg-green-100 text-green-800'}
+                                `}
+                              >
+                                {format(day, 'd')}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
