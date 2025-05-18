@@ -34,6 +34,18 @@ const Advertising: React.FC = () => {
                 Manage
               </a>
             </div>
+            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <span>Chekin</span>
+              <a href="https://dashboard.chekin.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                Manage
+              </a>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+              <span>PriceLabs</span>
+              <a href="https://app.pricelabs.co/pricing" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                Manage
+              </a>
+            </div>
           </div>
         </div>
 

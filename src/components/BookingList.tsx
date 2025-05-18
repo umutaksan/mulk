@@ -1,7 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Booking, BookingExpense } from '../types/Booking';
-import { ChevronDown, ChevronUp, Search, User, Calendar, Euro, Home, MessageSquare, Star, Plus, Users, PiggyBank, TrendingDown, Info, AlertTriangle, Send, Mail, Phone, Trash2, LogOut, LogIn, Filter } from 'lucide-react';
+import { 
+  ChevronDown, ChevronUp, Search, User, Calendar, Euro, Home, MessageSquare, Star, Plus, Users, PiggyBank, TrendingDown, Info, AlertTriangle, Send, Mail, Phone, Trash2, LogOut, LogIn, Filter 
+} from 'lucide-react';
 import { format, parseISO, isWithinInterval, startOfWeek, endOfWeek, addDays } from 'date-fns';
+import { Booking, BookingExpense } from '../types/Booking';
+import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface BookingListProps {
@@ -19,6 +22,9 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
   const [expandedProperty, setExpandedProperty] = useState<string | null>(null);
   const [bookingsState, setBookingsState] = useState(bookings);
   const [selectedProperty, setSelectedProperty] = useState<string>('All');
+  const [rating, setRating] = useState<number>(0);
+  const [reviewText, setReviewText] = useState<string>('');
+  const [editingRating, setEditingRating] = useState<string | null>(null);
 
   const properties = ['All', ...new Set(bookings.map(b => b.houseName))];
 
@@ -110,6 +116,28 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
       ...prev,
       [bookingId]: !prev[bookingId]
     }));
+  };
+
+  const handleAddRating = async (bookingId: string, source: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          [source === 'Booking.com' ? 'booking_rating' : 'airbnb_rating']: rating,
+          review_text: reviewText,
+          review_date: new Date().toISOString()
+        })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      setEditingRating(null);
+      setRating(0);
+      setReviewText('');
+    } catch (error) {
+      console.error('Error adding rating:', error);
+      alert('Failed to add rating');
+    }
   };
 
   if (type === 'past' && !showPastBookings) {
@@ -405,6 +433,127 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
                                     </div>
                                   </div>
                                 ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Add Rating Section */}
+                          <div className="mt-4 border-t pt-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Star className="h-5 w-5 text-yellow-500" />
+                              <h4 className="font-medium">Ratings & Reviews</h4>
+                            </div>
+                            
+                            {booking.source === 'Booking.com' && (
+                              <div className="mb-4">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Booking.com Rating</span>
+                                  {booking.booking_rating ? (
+                                    <span className="font-medium">{booking.booking_rating}/10</span>
+                                  ) : (
+                                    <button
+                                      onClick={() => setEditingRating(booking.id)}
+                                      className="text-blue-600 hover:text-blue-800 text-sm"
+                                    >
+                                      Add Rating
+                                    </button>
+                                  )}
+                                </div>
+                                {editingRating === booking.id && (
+                                  <div className="mt-2 space-y-2">
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max="10"
+                                      value={rating}
+                                      onChange={(e) => setRating(parseInt(e.target.value))}
+                                      className="w-full rounded-lg border-gray-300 text-sm"
+                                      placeholder="Rating (1-10)"
+                                    />
+                                    <textarea
+                                      value={reviewText}
+                                      onChange={(e) => setReviewText(e.target.value)}
+                                      className="w-full rounded-lg border-gray-300 text-sm"
+                                      placeholder="Review text"
+                                      rows={3}
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <button
+                                        onClick={() => setEditingRating(null)}
+                                        className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={() => handleAddRating(booking.id, 'Booking.com')}
+                                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                      >
+                                        Save Rating
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {booking.source === 'Airbnb' && (
+                              <div className="mb-4">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Airbnb Rating</span>
+                                  {booking.airbnb_rating ? (
+                                    <span className="font-medium">{booking.airbnb_rating}/5</span>
+                                  ) : (
+                                    <button
+                                      onClick={() => setEditingRating(booking.id)}
+                                      className="text-blue-600 hover:text-blue-800 text-sm"
+                                    >
+                                      Add Rating
+                                    </button>
+                                  )}
+                                </div>
+                                {editingRating === booking.id && (
+                                  <div className="mt-2 space-y-2">
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max="5"
+                                      value={rating}
+                                      onChange={(e) => setRating(parseInt(e.target.value))}
+                                      className="w-full rounded-lg border-gray-300 text-sm"
+                                      placeholder="Rating (1-5)"
+                                    />
+                                    <textarea
+                                      value={reviewText}
+                                      onChange={(e) => setReviewText(e.target.value)}
+                                      className="w-full rounded-lg border-gray-300 text-sm"
+                                      placeholder="Review text"
+                                      rows={3}
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <button
+                                        onClick={() => setEditingRating(null)}
+                                        className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={() => handleAddRating(booking.id, 'Airbnb')}
+                                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                      >
+                                        Save Rating
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {(booking.booking_rating || booking.airbnb_rating) && booking.review_text && (
+                              <div className="bg-gray-50 p-3 rounded-lg">
+                                <p className="text-sm text-gray-700">{booking.review_text}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Added on {format(parseISO(booking.review_date), 'MMM d, yyyy')}
+                                </p>
                               </div>
                             )}
                           </div>
