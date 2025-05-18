@@ -37,6 +37,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({
   });
 
   const [showNewTaskForm, setShowNewTaskForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const properties = ['All', ...Object.keys(bookingsByProperty)];
 
@@ -80,7 +81,12 @@ const Maintenance: React.FC<MaintenanceProps> = ({
   };
 
   const handleAddTask = async () => {
-    if (!newTask.property || !newTask.title || !newTask.due_date) return;
+    if (!newTask.property || !newTask.title || !newTask.due_date) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       // Get property_id from properties table
@@ -88,9 +94,17 @@ const Maintenance: React.FC<MaintenanceProps> = ({
         .from('properties')
         .select('id')
         .eq('name', newTask.property)
-        .single();
+        .maybeSingle();
 
-      if (propertyError) throw propertyError;
+      if (propertyError) {
+        throw propertyError;
+      }
+
+      if (!propertyData) {
+        alert('Property not found. Please select a valid property.');
+        setIsSubmitting(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('maintenance_tasks')
@@ -103,7 +117,16 @@ const Maintenance: React.FC<MaintenanceProps> = ({
           status: 'pending',
           price: newTask.price || 0
         })
-        .select()
+        .select(`
+          id,
+          title,
+          description,
+          due_date,
+          priority,
+          status,
+          price,
+          properties(name)
+        `)
         .single();
 
       if (error) throw error;
@@ -111,13 +134,13 @@ const Maintenance: React.FC<MaintenanceProps> = ({
       // Add the new task to the local state
       setTasks([...tasks, {
         id: data.id,
-        property: newTask.property!,
-        title: newTask.title!,
-        description: newTask.description || '',
-        due_date: newTask.due_date!,
-        priority: newTask.priority as 'low' | 'medium' | 'high',
-        status: 'pending',
-        price: newTask.price || 0
+        property: data.properties.name,
+        title: data.title,
+        description: data.description,
+        due_date: data.due_date,
+        priority: data.priority,
+        status: data.status,
+        price: data.price
       }]);
 
       setNewTask({
@@ -132,6 +155,9 @@ const Maintenance: React.FC<MaintenanceProps> = ({
       setShowNewTaskForm(false);
     } catch (error) {
       console.error('Error adding task:', error);
+      alert('Failed to add task. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -148,6 +174,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({
         setTasks(tasks.filter(task => task.id !== taskId));
       } catch (error) {
         console.error('Error deleting task:', error);
+        alert('Failed to delete task. Please try again.');
       }
     }
   };
@@ -166,6 +193,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({
       ));
     } catch (error) {
       console.error('Error updating task status:', error);
+      alert('Failed to update task status. Please try again.');
     }
   };
 
@@ -330,14 +358,16 @@ const Maintenance: React.FC<MaintenanceProps> = ({
               <button
                 onClick={() => setShowNewTaskForm(false)}
                 className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddTask}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Add Task
+                {isSubmitting ? 'Adding...' : 'Add Task'}
               </button>
             </div>
           </div>
