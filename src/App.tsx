@@ -226,6 +226,10 @@ function App() {
             bookingsByProperty={bookingsByProperty}
           />
         );
+      case 'advertising':
+        return <Advertising />;
+      case 'pending-reviews':
+        return <PendingReviews />;
       case 'sql':
         return <SqlEditor />;
       case 'settings':
