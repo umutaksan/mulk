@@ -53,7 +53,7 @@ const PendingReviews: React.FC = () => {
           email_marketing_sent,
           properties(name)
         `)
-        .order('arrival_date', { ascending: false });
+        .order('departure_date', { ascending: false });
 
       if (filter === 'rated') {
         query = query.or('booking_rating.not.is.null,airbnb_rating.not.is.null');
