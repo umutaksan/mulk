@@ -521,3 +521,5 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({
 };
 
 export default WeeklySummary;
+
+export default WeeklySummary
