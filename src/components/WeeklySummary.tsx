@@ -445,7 +445,7 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
         </div>
       )}
 
-      {/* New Property Availability Calendar Section */}
+      {/* Property Availability Calendar Section */}
       <div className="bg-white rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
@@ -490,7 +490,7 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
                     const days = eachDayOfInterval({ start, end });
 
                     return (
-                      <div key={month.toISOString()} className="bg-gray-50 rounded-lg p-4">
+                      <div key={month.toISOString()} className="bg-gray-50 rounded-lg p-4 transition-all duration-300 ease-in-out">
                         <div className="text-center mb-4 font-medium">
                           {format(month, 'MMMM yyyy')}
                         </div>
@@ -515,10 +515,12 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
                                 key={day.toISOString()}
                                 className={`
                                   h-8 flex items-center justify-center rounded-full text-sm
-                                  ${isToday(day) ? 'border-2 border-blue-500' : ''}
+                                  transition-all duration-200 ease-in-out
+                                  ${isToday(day) ? 'ring-2 ring-blue-500' : ''}
                                   ${isBooked 
-                                    ? 'bg-red-100 text-red-800' 
+                                    ? 'bg-red-700 text-white font-medium' 
                                     : 'bg-green-100 text-green-800'}
+                                  hover:scale-110
                                 `}
                               >
                                 {format(day, 'd')}
