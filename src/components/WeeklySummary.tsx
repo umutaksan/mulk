@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar, TrendingUp, TrendingDown, Users, ArrowRight, ArrowLeft, Clock, Home, PiggyBank, AlertTriangle, CheckCircle2, CalendarClock, LogIn, LogOut, User, Phone, Mail, MapPin, PenTool as Tool, ExternalLink } from 'lucide-react';
 import { Booking } from '../types/Booking';
-import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval, startOfMonth, endOfMonth, differenceInHours, addHours } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval, startOfMonth, endOfMonth, differenceInHours, addHours, eachDayOfInterval, isSameMonth, isWithinRange, addMonths } from 'date-fns';
 
 interface WeeklySummaryProps {
   bookings: Booking[];
@@ -444,6 +444,89 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
           </div>
         </div>
       )}
+
+      {/* Property Availability Calendar section */}
+      <div className="bg-white rounded-xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-blue-600" />
+            <h3 className="font-medium">Property Availability</h3>
+          </div>
+          <a 
+            href="https://app.pricelabs.co/pricing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Check Pricing on PriceLabs
+          </a>
+        </div>
+
+        {Object.entries(bookingsByProperty).map(([property, propertyBookings]) => {
+          // Get next 3 months
+          const months = Array.from({ length: 3 }, (_, i) => addMonths(new Date(), i));
+          
+          // Get all booked dates for this property
+          const bookedDates = propertyBookings.reduce((dates, booking) => {
+            const start = parseISO(booking.dateArrival);
+            const end = parseISO(booking.dateDeparture);
+            const daysInRange = eachDayOfInterval({ start, end });
+            return [...dates, ...daysInRange];
+          }, [] as Date[]);
+
+          return (
+            <div key={property} className="mb-8 last:mb-0">
+              <h4 className="font-medium mb-4 flex items-center gap-2">
+                <Home className="h-4 w-4 text-gray-500" />
+                {property}
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {months.map(month => {
+                  const daysInMonth = eachDayOfInterval({
+                    start: startOfMonth(month),
+                    end: endOfMonth(month)
+                  });
+
+                  return (
+                    <div key={format(month, 'yyyy-MM')} className="bg-gray-50 rounded-lg p-4">
+                      <div className="text-sm font-medium mb-3 text-center">
+                        {format(month, 'MMMM yyyy')}
+                      </div>
+                      <div className="grid grid-cols-7 gap-1">
+                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                          <div key={day} className="text-xs text-center text-gray-500 py-1">
+                            {day}
+                          </div>
+                        ))}
+                        {daysInMonth.map(date => {
+                          const isBooked = bookedDates.some(bookedDate => 
+                            format(bookedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+                          );
+
+                          return (
+                            <div 
+                              key={format(date, 'yyyy-MM-dd')}
+                              className={`text-xs text-center py-1 rounded ${
+                                isBooked 
+                                  ? 'bg-red-100 text-red-700' 
+                                  : 'bg-green-100 text-green-700'
+                              }`}
+                            >
+                              {format(date, 'd')}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
