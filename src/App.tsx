@@ -19,6 +19,8 @@ import WeeklySummary from './components/WeeklySummary';
 import Maintenance from './components/Maintenance';
 import Rental from './components/Rental';
 import SqlEditor from './components/SqlEditor';
+import Advertising from './components/Advertising';
+import PendingReviews from './components/PendingReviews';
 import { DUMMY_CSV } from './components/DummyData';
 
 function App() {
