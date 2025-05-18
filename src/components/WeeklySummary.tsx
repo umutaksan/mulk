@@ -1,14 +1,17 @@
 import React from 'react';
 import { Calendar, TrendingUp, TrendingDown, Users, ArrowRight, ArrowLeft, Clock, Home, PiggyBank, AlertTriangle, CheckCircle2, CalendarClock, LogIn, LogOut, User, Phone, Mail, MapPin, PenTool as Tool, ExternalLink } from 'lucide-react';
 import { Booking } from '../types/Booking';
-import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval, startOfMonth, endOfMonth, differenceInHours, addHours } from 'date-fns';
+import { format, parseISO, startOfWeek, endOfWeek, addWeeks, subWeeks, isWithinInterval, startOfMonth, endOfMonth, differenceInHours, addHours, differenceInDays, addDays } from 'date-fns';
 
 interface WeeklySummaryProps {
   bookings: Booking[];
   bookingsByProperty: { [property: string]: Booking[] };
 }
 
-const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByProperty }) => {
+const WeeklySummary: React.FC<WeeklySummaryProps> = ({
+  bookings,
+  bookingsByProperty
+}) => {
   const today = new Date();
   
   // Calculate week ranges
@@ -65,7 +68,6 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
   const nextWeekStats = calculateStats(nextWeekBookings);
   const thisMonthStats = calculateStats(thisMonthBookings);
 
-  // Get urgent tasks and notifications
   const getUrgentTasks = () => {
     const tasks = [];
     
@@ -85,6 +87,40 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
         }))
       });
     }
+
+    // Find booking gaps for each property
+    Object.entries(bookingsByProperty).forEach(([property, propertyBookings]) => {
+      // Sort bookings by arrival date
+      const sortedBookings = [...propertyBookings].sort((a, b) => 
+        parseISO(a.dateArrival).getTime() - parseISO(b.dateArrival).getTime()
+      );
+
+      // Check for gaps between bookings
+      for (let i = 0; i < sortedBookings.length - 1; i++) {
+        const currentBooking = sortedBookings[i];
+        const nextBooking = sortedBookings[i + 1];
+        
+        const currentDeparture = parseISO(currentBooking.dateDeparture);
+        const nextArrival = parseISO(nextBooking.dateArrival);
+        
+        const gapDays = differenceInDays(nextArrival, currentDeparture);
+        
+        if (gapDays > 0) {
+          tasks.push({
+            type: 'gap',
+            message: `${gapDays} day gap at ${property}`,
+            icon: Calendar,
+            details: [{
+              type: 'gap',
+              property,
+              startDate: currentDeparture,
+              endDate: nextArrival,
+              days: gapDays
+            }]
+          });
+        }
+      }
+    });
 
     // Check for upcoming arrivals in the next 48 hours
     const upcomingArrivals = bookings.filter(booking => {
@@ -301,17 +337,20 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
                     className={`flex items-center gap-3 p-3 rounded-lg ${
                       task.type === 'warning' ? 'bg-orange-50' : 
                       task.type === 'maintenance' ? 'bg-purple-50' : 
+                      task.type === 'gap' ? 'bg-yellow-50' :
                       'bg-blue-50'
                     }`}
                   >
                     <Icon className={`h-5 w-5 ${
                       task.type === 'warning' ? 'text-orange-500' : 
                       task.type === 'maintenance' ? 'text-purple-500' : 
+                      task.type === 'gap' ? 'text-yellow-500' :
                       'text-blue-500'
                     }`} />
                     <span className={`${
                       task.type === 'warning' ? 'text-orange-700' : 
                       task.type === 'maintenance' ? 'text-purple-700' : 
+                      task.type === 'gap' ? 'text-yellow-700' :
                       'text-blue-700'
                     }`}>
                       {task.message}
@@ -326,6 +365,39 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
                           <div key={detailIndex} className="flex items-center gap-2 p-2 text-sm text-gray-600">
                             <Home className="h-4 w-4" />
                             <span>{detail.property}</span>
+                          </div>
+                        );
+                      }
+
+                      if (detail.type === 'gap') {
+                        return (
+                          <div key={detailIndex} className="bg-white border border-yellow-100 rounded-lg p-3 mb-2">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-yellow-500" />
+                                <span className="font-medium">{detail.property}</span>
+                              </div>
+                              <a 
+                                href="https://app.pricelabs.co/pricing"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                <span>Check PriceLabs</span>
+                              </a>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <span>Gap Period:</span>
+                                <span className="font-medium">
+                                  {format(detail.startDate, 'MMM d')} - {format(detail.endDate, 'MMM d')}
+                                </span>
+                                <span className="text-yellow-600 ml-2">
+                                  ({detail.days} days)
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         );
                       }
@@ -449,5 +521,3 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
 };
 
 export default WeeklySummary;
-
-export default WeeklySummary
