@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Calendar, Users, TrendingUp, Settings, FileBarChart, Sun, PenTool as Tool, Home, Euro, TrendingDown, ChevronDown, ChevronRight, Database } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, TrendingUp, Settings, FileBarChart, Sun, PenTool as Tool, Home, Euro, TrendingDown, ChevronDown, ChevronRight, Database, Megaphone, Star } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface SidebarProps {
@@ -37,6 +37,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
       items: [
         { id: 'revenue', icon: TrendingUp, label: t('navigation.revenue') },
         { id: 'expenses', icon: TrendingDown, label: t('navigation.expenses') }
+      ]
+    },
+    {
+      id: 'Marketing',
+      title: 'Marketing',
+      items: [
+        { id: 'advertising', icon: Megaphone, label: 'Advertising' },
+        { id: 'pending-reviews', icon: Star, label: 'Pending Reviews' }
       ]
     },
     {
@@ -104,4 +112,4 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => 
   );
 };
 
-export default Sidebar
+export default Sidebar;
