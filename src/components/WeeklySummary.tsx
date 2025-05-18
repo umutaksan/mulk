@@ -449,3 +449,5 @@ const WeeklySummary: React.FC<WeeklySummaryProps> = ({ bookings, bookingsByPrope
 };
 
 export default WeeklySummary;
+
+export default WeeklySummary
