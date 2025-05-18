@@ -25,7 +25,7 @@ const PendingReviews: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'rated' | 'unrated'>('all');
+  const [filter, setFilter] = useState<'all' | 'rated' | 'unrated'>('unrated');
   const [selectedReview, setSelectedReview] = useState<string | null>(null);
   const [rating, setRating] = useState<number>(0);
   const [reviewText, setReviewText] = useState<string>('');
@@ -144,9 +144,9 @@ const PendingReviews: React.FC = () => {
               onChange={(e) => setFilter(e.target.value as 'all' | 'rated' | 'unrated')}
               className="border-none bg-transparent focus:ring-0 text-sm"
             >
-              <option value="all">All Reviews</option>
+              <option value="unrated">Pending Reviews</option>
               <option value="rated">Rated</option>
-              <option value="unrated">Unrated</option>
+              <option value="all">All Reviews</option>
             </select>
           </div>
         </div>
