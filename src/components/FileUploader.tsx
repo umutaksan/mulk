@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, Check } from 'lucide-react';
-import * as XLSX from 'xlsx/xlsx.mjs';
+import * as XLSX from 'xlsx';
 
 interface FileUploaderProps {
   onFileLoaded: (csvData: string, guestDetails?: any[]) => void;
@@ -17,6 +17,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileLoaded, onConfirm, is
     xlsx: false
   });
   const [guestDetails, setGuestDetails] = useState<any[]>([]);
+  const [csvData, setCsvData] = useState<string>('');
 
   const handleCsvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -29,6 +30,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileLoaded, onConfirm, is
     reader.onload = (event) => {
       const csvData = event.target?.result as string;
       if (csvData) {
+        setCsvData(csvData);
         onFileLoaded(csvData, guestDetails);
         setHasFiles(prev => ({ ...prev, csv: true }));
       }
