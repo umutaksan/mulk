@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Mail, Phone, Star, Calendar, Home, Filter, Check } from 'lucide-react';
+import { Mail, Phone, Star, Calendar, Home, Filter, Check, Send } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
-interface PendingReview {
+interface Review {
   id: string;
   guest_name: string;
   guest_email: string | null;
@@ -11,25 +11,30 @@ interface PendingReview {
   arrival_date: string;
   departure_date: string;
   source: string;
+  booking_rating: number | null;
+  airbnb_rating: number | null;
+  review_text: string | null;
+  review_date: string | null;
+  email_marketing_sent: boolean;
   properties: {
     name: string;
   };
 }
 
 const PendingReviews: React.FC = () => {
-  const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'booking' | 'airbnb'>('all');
+  const [filter, setFilter] = useState<'all' | 'rated' | 'unrated'>('all');
   const [selectedReview, setSelectedReview] = useState<string | null>(null);
   const [rating, setRating] = useState<number>(0);
   const [reviewText, setReviewText] = useState<string>('');
 
   useEffect(() => {
-    fetchPendingReviews();
+    fetchReviews();
   }, [filter]);
 
-  const fetchPendingReviews = async () => {
+  const fetchReviews = async () => {
     try {
       let query = supabase
         .from('bookings')
@@ -41,36 +46,40 @@ const PendingReviews: React.FC = () => {
           arrival_date,
           departure_date,
           source,
+          booking_rating,
+          airbnb_rating,
+          review_text,
+          review_date,
+          email_marketing_sent,
           properties(name)
         `)
-        .is('review_text', null)
         .order('departure_date', { ascending: false });
 
-      if (filter === 'booking') {
-        query = query.eq('source', 'Booking.com').is('booking_rating', null);
-      } else if (filter === 'airbnb') {
-        query = query.eq('source', 'Airbnb').is('airbnb_rating', null);
+      if (filter === 'rated') {
+        query = query.or('booking_rating.not.is.null,airbnb_rating.not.is.null');
+      } else if (filter === 'unrated') {
+        query = query.or('and(source.eq.Booking.com,booking_rating.is.null),and(source.eq.Airbnb,airbnb_rating.is.null)');
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
 
-      setPendingReviews(data || []);
+      setReviews(data || []);
     } catch (err: any) {
-      console.error('Error fetching pending reviews:', err.message);
+      console.error('Error fetching reviews:', err.message);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmitRating = async (bookingId: string) => {
+  const handleSubmitRating = async (bookingId: string, source: string) => {
     try {
       const { error } = await supabase
         .from('bookings')
         .update({
-          [filter === 'booking' ? 'booking_rating' : 'airbnb_rating']: rating,
+          [source === 'Booking.com' ? 'booking_rating' : 'airbnb_rating']: rating,
           review_text: reviewText,
           review_date: new Date().toISOString()
         })
@@ -78,13 +87,29 @@ const PendingReviews: React.FC = () => {
 
       if (error) throw error;
 
-      setPendingReviews(reviews => reviews.filter(r => r.id !== bookingId));
+      await fetchReviews();
       setSelectedReview(null);
       setRating(0);
       setReviewText('');
     } catch (err: any) {
       console.error('Error submitting rating:', err.message);
       alert('Failed to submit rating');
+    }
+  };
+
+  const handleMarkEmailSent = async (bookingId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ email_marketing_sent: true })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      await fetchReviews();
+    } catch (err: any) {
+      console.error('Error marking email as sent:', err.message);
+      alert('Failed to update email status');
     }
   };
 
@@ -99,7 +124,7 @@ const PendingReviews: React.FC = () => {
   if (error) {
     return (
       <div className="bg-red-50 text-red-700 p-4 rounded-lg">
-        <p>Error fetching pending reviews: {error}</p>
+        <p>Error fetching reviews: {error}</p>
       </div>
     );
   }
@@ -109,35 +134,41 @@ const PendingReviews: React.FC = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <Star className="h-6 w-6 text-yellow-500" />
-          Pending Reviews
+          Guest Reviews
         </h2>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 bg-white rounded-lg shadow px-4 py-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <select
               value={filter}
-              onChange={(e) => setFilter(e.target.value as 'all' | 'booking' | 'airbnb')}
+              onChange={(e) => setFilter(e.target.value as 'all' | 'rated' | 'unrated')}
               className="border-none bg-transparent focus:ring-0 text-sm"
             >
-              <option value="all">All Sources</option>
-              <option value="booking">Booking.com</option>
-              <option value="airbnb">Airbnb</option>
+              <option value="all">All Reviews</option>
+              <option value="rated">Rated</option>
+              <option value="unrated">Unrated</option>
             </select>
           </div>
-          <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
-            {pendingReviews.length} pending
-          </span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {pendingReviews.map((review) => (
+        {reviews.map((review) => (
           <div key={review.id} className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium">{review.guest_name}</h3>
-              <div className="flex items-center gap-1 text-yellow-500">
-                <Star className="h-5 w-5" />
-                <span className="text-sm">Pending {review.source} Review</span>
+              <div className="flex items-center gap-2">
+                {review.source === 'Booking.com' ? (
+                  review.booking_rating ? (
+                    <span className="text-green-600">{review.booking_rating}/10</span>
+                  ) : (
+                    <span className="text-yellow-500">Pending Booking.com Review</span>
+                  )
+                ) : review.airbnb_rating ? (
+                  <span className="text-green-600">{review.airbnb_rating}/5</span>
+                ) : (
+                  <span className="text-yellow-500">Pending Airbnb Review</span>
+                )}
               </div>
             </div>
 
@@ -174,7 +205,45 @@ const PendingReviews: React.FC = () => {
                 </a>
               )}
 
-              {selectedReview === review.id ? (
+              {review.review_text && (
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-gray-700">{review.review_text}</p>
+                  {review.review_date && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Added on {format(parseISO(review.review_date), 'MMM d, yyyy')}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-between items-center pt-2">
+                {!review.email_marketing_sent && review.guest_email && (
+                  <button
+                    onClick={() => handleMarkEmailSent(review.id)}
+                    className="flex items-center gap-2 px-3 py-2 text-blue-600 hover:text-blue-800"
+                  >
+                    <Send className="h-4 w-4" />
+                    Mark Email Sent
+                  </button>
+                )}
+                {review.email_marketing_sent && (
+                  <span className="text-green-600 flex items-center gap-2">
+                    <Check className="h-4 w-4" />
+                    Email Sent
+                  </span>
+                )}
+
+                {!review.review_text && (
+                  <button
+                    onClick={() => setSelectedReview(review.id)}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Add Rating & Review
+                  </button>
+                )}
+              </div>
+
+              {selectedReview === review.id && (
                 <div className="mt-4 space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -212,7 +281,7 @@ const PendingReviews: React.FC = () => {
                       Cancel
                     </button>
                     <button
-                      onClick={() => handleSubmitRating(review.id)}
+                      onClick={() => handleSubmitRating(review.id, review.source)}
                       className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                     >
                       <Check className="h-4 w-4" />
@@ -220,13 +289,6 @@ const PendingReviews: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              ) : (
-                <button
-                  onClick={() => setSelectedReview(review.id)}
-                  className="mt-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full"
-                >
-                  Add Rating & Review
-                </button>
               )}
             </div>
           </div>
