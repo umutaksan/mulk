@@ -119,7 +119,8 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
     }));
   };
 
-  const isValidUUID = (uuid: string) => {
+  const isValidUUID = (uuid: string): boolean => {
+    if (!uuid) return false;
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   };
@@ -128,8 +129,15 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
     try {
       setError(null);
 
-      if (!isValidUUID(bookingId)) {
-        throw new Error('Invalid booking ID format');
+      if (!bookingId || !isValidUUID(bookingId)) {
+        setError('Invalid booking ID format');
+        return;
+      }
+
+      if (!rating || (source === 'Booking.com' && (rating < 1 || rating > 10)) || 
+          (source === 'Airbnb' && (rating < 1 || rating > 5))) {
+        setError(`Please enter a valid rating (${source === 'Booking.com' ? '1-10' : '1-5'})`);
+        return;
       }
 
       const { error: supabaseError } = await supabase
@@ -143,7 +151,6 @@ const BookingList: React.FC<BookingListProps> = ({ bookings, title, type }) => {
 
       if (supabaseError) throw supabaseError;
 
-      // Update local state to reflect the changes
       setBookingsState(prevBookings =>
         prevBookings.map(booking =>
           booking.id === bookingId
